@@ -34,4 +34,43 @@ const userRegister = () => {
       .withMessage("Password can not contain more than 15 characters"),
   ];
 };
-export { userRegister };
+const userLogIn = () => {
+  return [
+    body("password")
+      .notEmpty()
+      .withMessage("Password field is required")
+      .trim()
+      .isLength({ min: 6 })
+      .withMessage("Password must contain at least 6 characters")
+      .bail()
+      .isLength({ max: 22 })
+      .withMessage("Password can not contain more than 15 characters"),
+
+    // body().custom((value, { req }) => {
+    //   if (!req.body.email && !req.body.userName) {
+    //     throw new Error("Either email or userName is required");
+    //   }
+    //   return true;
+    // }),
+
+    body("email")
+      .optional()
+      .trim()
+      .toLowerCase()
+      .isEmail()
+      .withMessage("Invalid email"),
+    body("userName")
+      .optional()
+      .bail()
+      .trim()
+      .toLowerCase()
+      .isLength({ min: 6 })
+      .withMessage("UserName must contain at least 6 characters")
+      .bail()
+      .isLength({ max: 15 })
+      .withMessage("UserName can not contain more than 15 characters"),
+  ];
+};
+export { userRegister, userLogIn };
+//  .notEmpty()
+//     .withMessage("email field is required")

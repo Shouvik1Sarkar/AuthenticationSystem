@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -9,7 +10,7 @@ const userSchema = new mongoose.Schema(
     },
     userName: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
       lowercase: true,
       unique: true,
@@ -36,6 +37,10 @@ const userSchema = new mongoose.Schema(
     verificationTokenExpiryDate: {
       type: Date,
     },
+    isLoggedIn: {
+      type: Boolean,
+      default: false,
+    },
     accessToken: {
       type: String,
     },
@@ -49,7 +54,9 @@ const userSchema = new mongoose.Schema(
       type: Date,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 // save and hash the password
@@ -107,4 +114,4 @@ userSchema.methods.generateVerificationToken = async function () {
 export const User = mongoose.model("User", userSchema);
 // JWT is stateless bcz it posseses the exp info and doesn't require dn query before every operation
 
-console.log("TYPE OF: ", userSchema);
+// console.log("TYPE OF: ", userSchema);
