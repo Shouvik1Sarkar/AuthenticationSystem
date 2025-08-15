@@ -51,23 +51,23 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-export const User = mongoose.model("User", userSchema);
 
 // save and hash the password
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) next();
+  if (!this.isModified("password")) return next();
 
   this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
 // compare the saved password
-userSchema.methods.comparePassword = async (password) => {
+userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.methods.generateAccessToken = async () => {
-  jwt.sign(
+userSchema.methods.generateAccessToken = async function () {
+  return jwt.sign(
     {
       id: this._id,
       email: this.email,
@@ -78,8 +78,8 @@ userSchema.methods.generateAccessToken = async () => {
     }
   );
 };
-userSchema.methods.generateRefreshToken = async () => {
-  jwt.sign(
+userSchema.methods.generateRefreshToken = async function () {
+  return jwt.sign(
     {
       id: this._id,
       email: this.email,
@@ -90,16 +90,21 @@ userSchema.methods.generateRefreshToken = async () => {
     }
   );
 };
-userSchema.methods.verificationToken = async () => {
-  const verificationToken = crypto.randomBytes(20).toString("hex");
-  const hasedVerificationToken = crypto
+userSchema.methods.generateVerificationToken = async function () {
+  const unHashedVerificationToken = crypto.randomBytes(20).toString("hex");
+  const hashedVerificationToken = crypto
     .createHash("sha256")
-    .update(verificationToken)
+    .update(unHashedVerificationToken)
     .digest("hex");
 
-  const verificationTokenExpiry = Date.now() + 20 * 60 * 1000;
+  // this.verificationToken = hashedVerificationToken;
+  this.verificationToken = unHashedVerificationToken;
 
-  return { verificationToken, hasedVerificationToken, verificationTokenExpiry };
+  this.verificationTokenExpiryDate = Date.now() + 20 * 60 * 1000;
+
+  return unHashedVerificationToken;
 };
-
+export const User = mongoose.model("User", userSchema);
 // JWT is stateless bcz it posseses the exp info and doesn't require dn query before every operation
+
+console.log("TYPE OF: ", userSchema);
