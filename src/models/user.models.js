@@ -53,6 +53,12 @@ const userSchema = new mongoose.Schema(
     refreshTokenExpiryDate: {
       type: Date,
     },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordTokenExpiry: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -97,7 +103,7 @@ userSchema.methods.generateRefreshToken = async function () {
     }
   );
 };
-userSchema.methods.generateVerificationToken = async function () {
+userSchema.methods.generateRandomToken = async function () {
   const unHashedVerificationToken = crypto.randomBytes(20).toString("hex");
   const hashedVerificationToken = crypto
     .createHash("sha256")

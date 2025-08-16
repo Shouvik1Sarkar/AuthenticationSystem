@@ -7,7 +7,6 @@ const userRegister = () => {
       .withMessage("userName field is required")
       .bail()
       .trim()
-      .toLowerCase()
       .isLength({ min: 6 })
       .withMessage("UserName must contain at least 6 characters")
       .bail()
@@ -63,7 +62,6 @@ const userLogIn = () => {
       .optional()
       .bail()
       .trim()
-      .toLowerCase()
       .isLength({ min: 6 })
       .withMessage("UserName must contain at least 6 characters")
       .bail()
@@ -71,6 +69,18 @@ const userLogIn = () => {
       .withMessage("UserName can not contain more than 15 characters"),
   ];
 };
-export { userRegister, userLogIn };
+const resetPassword = () => {
+  return [
+    body("email")
+      .optional()
+      .trim()
+      .toLowerCase()
+      .isEmail()
+      .withMessage("Invalid Email"),
+
+    body("userName").optional().trim(),
+  ];
+};
+export { userRegister, userLogIn, resetPassword };
 //  .notEmpty()
 //     .withMessage("email field is required")

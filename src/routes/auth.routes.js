@@ -5,8 +5,10 @@ import {
   logInUser,
   logOut,
   registerUser,
+  reset,
 } from "../controllers/auth.controllers.js";
 import {
+  resetPassword,
   userLogIn,
   userRegister,
 } from "../validators/validateInputs.validators.js";
@@ -20,5 +22,6 @@ authRoute.route("/verify/:token").get(emailVerification);
 authRoute.route("/login").post(userLogIn(), validate, logInUser);
 authRoute.route("/getMe").get(jwt_token, getMe);
 authRoute.route("/logout").get(jwt_token, logOut);
+authRoute.route("/reset").post(resetPassword(), validate, reset);
 
 export default authRoute;

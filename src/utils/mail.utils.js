@@ -58,5 +58,24 @@ const registrationEmail = (name, senderUrl) => {
   };
 };
 
+const resetPasswordEmail = (name, senderUrl) => {
+  return {
+    body: {
+      name: name,
+      intro: "Welcome to the authentication System",
+      action: {
+        instructions: "Click on the URL to reset Password.",
+        button: {
+          color: "#22BC66", // Optional action button color
+          text: "Reset Password",
+          link: senderUrl,
+        },
+      },
+      outro:
+        "Need help, or have questions? Just reply to this email, we'd love to help.",
+    },
+  };
+};
+
 export default mailSender;
-export { registrationEmail };
+export { registrationEmail, resetPasswordEmail };
