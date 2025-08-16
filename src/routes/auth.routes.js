@@ -1,14 +1,18 @@
 import { Router } from "express";
 import {
+  changePass,
   emailVerification,
+  forgotPassword,
   getMe,
   logInUser,
   logOut,
   registerUser,
-  reset,
+  resetPassword,
 } from "../controllers/auth.controllers.js";
 import {
-  resetPassword,
+  changePassword,
+  forgotPassordValidator,
+  resetPassordValidator,
   userLogIn,
   userRegister,
 } from "../validators/validateInputs.validators.js";
@@ -21,7 +25,15 @@ authRoute.route("/register").post(userRegister(), validate, registerUser);
 authRoute.route("/verify/:token").get(emailVerification);
 authRoute.route("/login").post(userLogIn(), validate, logInUser);
 authRoute.route("/getMe").get(jwt_token, getMe);
-authRoute.route("/logout").get(jwt_token, logOut);
-authRoute.route("/reset").post(resetPassword(), validate, reset);
+authRoute.route("/logout").post(jwt_token, logOut);
+authRoute
+  .route("/forgot")
+  .post(forgotPassordValidator(), validate, forgotPassword);
+authRoute
+  .route("/changepassword/:token")
+  .post(changePassword(), validate, changePass);
+authRoute
+  .route("/reset")
+  .post(resetPassordValidator(), validate, jwt_token, resetPassword);
 
 export default authRoute;

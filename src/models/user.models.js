@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { type } from "os";
 
 const userSchema = new mongoose.Schema(
   {
@@ -57,6 +58,12 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
     resetPasswordTokenExpiry: {
+      type: Date,
+    },
+    forgotPassord: {
+      type: String,
+    },
+    forgotPassordExpiry: {
       type: Date,
     },
   },

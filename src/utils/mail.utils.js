@@ -58,7 +58,7 @@ const registrationEmail = (name, senderUrl) => {
   };
 };
 
-const resetPasswordEmail = (name, senderUrl) => {
+const forgotPasswordEmail = (name, senderUrl) => {
   return {
     body: {
       name: name,
@@ -78,4 +78,4 @@ const resetPasswordEmail = (name, senderUrl) => {
 };
 
 export default mailSender;
-export { registrationEmail, resetPasswordEmail };
+export { registrationEmail, forgotPasswordEmail };

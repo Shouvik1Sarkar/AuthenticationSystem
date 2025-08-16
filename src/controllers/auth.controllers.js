@@ -2,7 +2,7 @@ import asyncHandler from "../utils/asyncHandler.utils.js";
 import { ApiError } from "../utils/api-error-handler.utils.js";
 import { ApiResponse } from "../utils/api-response.utils.js";
 import { User } from "../models/user.models.js";
-import mailSender, { resetPasswordEmail } from "../utils/mail.utils.js";
+import mailSender, { forgotPasswordEmail } from "../utils/mail.utils.js";
 import { registrationEmail } from "../utils/mail.utils.js";
 // import { jwt_token } from "../middlewares/tokenValidation.middlewares.js";
 
@@ -166,7 +166,7 @@ const logOut = asyncHandler(async (req, res) => {
   await user.save();
   return res.status(200).json(new ApiResponse(200, "User Logged Out"));
 });
-const reset = asyncHandler(async (req, res) => {
+const forgotPassword = asyncHandler(async (req, res) => {
   const { email, userName } = await req.body;
   if (!email && !userName) {
     throw new ApiError(500, "Username and Email both can not be empty");
@@ -177,17 +177,17 @@ const reset = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(500, "Not found user");
   }
-  const resetPasswordToken = await user.generateRandomToken();
-  const resetUrl = `${process.env.API_STRUCTURE}/changepassword/${resetPasswordToken}`;
+  const token = await user.generateRandomToken();
+  const resetUrl = `${process.env.API_STRUCTURE}/changepassword/${token}`;
 
   mailSender({
     email,
     subject: "Reset Your Password",
-    mailGenContent: resetPasswordEmail(user.userName, resetUrl),
+    mailGenContent: forgotPasswordEmail(user.userName, resetUrl),
   });
 
-  user.resetPasswordToken = resetPasswordToken;
-  user.resetPasswordTokenExpiry = Date.now() + 1000 * 60 * 10;
+  user.forgotPassord = token;
+  user.forgotPassordExpiry = Date.now() + 1000 * 60 * 10;
   await user.save();
 
   return res
@@ -196,15 +196,73 @@ const reset = asyncHandler(async (req, res) => {
 });
 
 const changePass = asyncHandler(async (req, res) => {
-  const token = req.params;
+  const { token } = req.params;
   if (!token) {
     throw new ApiError(500, "reset token not found");
   }
 
-  const user = await User.findOne({ resetPasswordToken: token });
+  const user = await User.findOne({
+    forgotPassord: token,
+    forgotPassordExpiry: { $gt: Date.now() },
+  });
   if (!user) {
     throw new ApiError(500, "User does not exist");
   }
+  const { newPassword, repeatPassword } = req.body;
+  if (newPassword !== repeatPassword) {
+    throw new ApiError(500, "New password and repeat password does not match.");
+  }
+
+  user.password = newPassword;
+  user.forgotPassord = undefined;
+  user.forgotPassordExpiry = undefined;
+  await user.save();
+  return res.status(200).json(new ApiResponse(200, "password changed"));
 });
 
-export { registerUser, emailVerification, logInUser, getMe, logOut, reset };
+const resetPassword = asyncHandler(async (req, res) => {
+  const jwt_data = req.access_token_data;
+  console.log("JWT DATA: ", jwt_data);
+  if (!jwt_data) {
+    throw new ApiError(500, "jwt data was not found");
+  }
+  const user = await User.findById({ _id: jwt_data.id });
+  if (!user) {
+    throw new ApiError(500, "User not found");
+  }
+  if (!user.isLoggedIn) {
+    throw new ApiError(500, "User not LoggedIn");
+  }
+
+  const { password, newPassword, repeatPassword } = req.body;
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    throw new ApiError(500, "Password not Matched");
+  }
+  if (newPassword !== repeatPassword) {
+    throw new ApiError(500, "New password and repeat password does not match.");
+  }
+
+  user.password = newPassword;
+  user.isLoggedIn = false;
+  user.accessToken = undefined;
+  user.accessTokenExpiryDate = undefined;
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  await user.save();
+  return res.status(200).json(new ApiResponse(200, "password reset Done"));
+});
+
+export {
+  registerUser,
+  emailVerification,
+  logInUser,
+  getMe,
+  logOut,
+  forgotPassword,
+  changePass,
+  resetPassword,
+};

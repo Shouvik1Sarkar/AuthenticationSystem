@@ -69,7 +69,7 @@ const userLogIn = () => {
       .withMessage("UserName can not contain more than 15 characters"),
   ];
 };
-const resetPassword = () => {
+const forgotPassordValidator = () => {
   return [
     body("email")
       .optional()
@@ -81,6 +81,73 @@ const resetPassword = () => {
     body("userName").optional().trim(),
   ];
 };
-export { userRegister, userLogIn, resetPassword };
+const changePassword = () => {
+  return [
+    body("newPassword")
+      .trim()
+      .notEmpty()
+      .withMessage("Password field can not be empty")
+      .bail()
+      .isLength({ min: 6 })
+      .withMessage("Password must contain at least 6 characters")
+      .bail()
+      .isLength({ max: 22 })
+      .withMessage("Password can not contain more than 15 characters"),
+
+    body("repeatPassword")
+      .trim()
+      .notEmpty()
+      .withMessage("Password field can not be empty")
+      .bail()
+      .isLength({ min: 6 })
+      .withMessage("Password must contain at least 6 characters")
+      .bail()
+      .isLength({ max: 22 })
+      .withMessage("Password can not contain more than 15 characters"),
+  ];
+};
+
+const resetPassordValidator = () => {
+  return [
+    body("password")
+      .notEmpty()
+      .withMessage("Password field is required")
+      .trim()
+      .isLength({ min: 6 })
+      .withMessage("Password must contain at least 6 characters")
+      .bail()
+      .isLength({ max: 22 })
+      .withMessage("Password can not contain more than 15 characters"),
+
+    body("newPassword")
+      .trim()
+      .notEmpty()
+      .withMessage("Password field can not be empty")
+      .bail()
+      .isLength({ min: 6 })
+      .withMessage("Password must contain at least 6 characters")
+      .bail()
+      .isLength({ max: 22 })
+      .withMessage("Password can not contain more than 15 characters"),
+
+    body("repeatPassword")
+      .trim()
+      .notEmpty()
+      .withMessage("Password field can not be empty")
+      .bail()
+      .isLength({ min: 6 })
+      .withMessage("Password must contain at least 6 characters")
+      .bail()
+      .isLength({ max: 22 })
+      .withMessage("Password can not contain more than 15 characters"),
+  ];
+};
+export {
+  userRegister,
+  userLogIn,
+  forgotPassordValidator,
+  changePassword,
+  resetPassordValidator,
+};
 //  .notEmpty()
 //     .withMessage("email field is required")
