@@ -4,7 +4,9 @@ import { ApiResponse } from "../utils/api-response.utils.js";
 import { User } from "../models/user.models.js";
 import mailSender from "../utils/mail.utils.js";
 import { registrationEmail } from "../utils/mail.utils.js";
-import crypto from "crypto";
+// import { jwt_token } from "../middlewares/tokenValidation.middlewares.js";
+
+import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { userName, email, password } = req.body;
@@ -82,7 +84,86 @@ const logInUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Email or userName required.");
   }
 
+  const user = await User.findOne({
+    $or: [{ email }, { userName }],
+  });
+  if (!user) {
+    throw new ApiError(522, "User does not exit.");
+  }
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    throw new ApiError(522, "Password did not match.");
+  }
+
+  const access_token = await user.generateAccessToken();
+
+  // console.log("ACCHESSTOKEN: ", access_token);
+  const accessTokenData = {
+    httpOnly: true, // prevents client JS from accessing the cookie
+    secure: process.env.NODE_ENV === "production", // only on HTTPS in production
+    sameSite: "strict", // CSRF protection
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  };
+
+  user.isLoggedIn = true;
+  await user.save();
+
+  // const token = req.cookies?.accessToken; // retrieve cookie
+
+  // if (!token) {
+  //   return res.status(401).json({ message: "No token found, please log in" });
+  // }
+  // const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+  // console.log("decoded", decoded);
+
   return res.status(200).json(new ApiResponse(200, "LogIn Successful"));
 });
 
-export { registerUser, emailVerification, logInUser };
+const getMe = asyncHandler(async (req, res) => {
+  const jwt_data = req.access_token_data;
+  console.log("jwt_data: ", jwt_data);
+  console.log("now time: ", Date.now() / 1000);
+  console.log("expiry time: ", jwt_data.exp);
+
+  // not required though bcz it jwt.verify() already checks it.
+
+  if (jwt_data.exp < Date.now() / 1000) {
+    throw new ApiError(500, "Token session expired");
+  }
+  const user = await User.findById({
+    _id: jwt_data.id,
+  });
+  console.log("USER:", user);
+  if (!user.isLoggedIn) {
+    throw new ApiError(500, "User not Logged In");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Get me is done successfully."));
+});
+
+const logOut = asyncHandler(async (req, res) => {
+  const jwt_data = req.access_token_data;
+  console.log("jwt_data: ", jwt_data);
+  const user = await User.findById({ _id: jwt_data.id });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+  console.log("USER:", user);
+  if (!user.isLoggedIn) {
+    throw new ApiError(500, "User not Logged In");
+  }
+  user.isLoggedIn = false;
+  user.accessToken = undefined;
+  user.accessTokenExpiryDate = undefined;
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  await user.save();
+  return res.status(200).json(new ApiResponse(200, "User Logged Out"));
+});
+
+export { registerUser, emailVerification, logInUser, getMe, logOut };
