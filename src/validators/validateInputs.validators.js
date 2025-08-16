@@ -128,18 +128,18 @@ const resetPassordValidator = () => {
       .withMessage("Password must contain at least 6 characters")
       .bail()
       .isLength({ max: 22 })
-      .withMessage("Password can not contain more than 15 characters"),
+      .withMessage("Password can not contain more than 15 characters."),
 
     body("repeatPassword")
       .trim()
       .notEmpty()
-      .withMessage("Password field can not be empty")
+      .withMessage("Password field can not be empty.")
       .bail()
       .isLength({ min: 6 })
-      .withMessage("Password must contain at least 6 characters")
+      .withMessage("Password must contain at least 6 characters.")
       .bail()
       .isLength({ max: 22 })
-      .withMessage("Password can not contain more than 15 characters"),
+      .withMessage("Password can not contain more than 15 characters."),
   ];
 };
 export {
