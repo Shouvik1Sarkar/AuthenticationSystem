@@ -2,12 +2,15 @@ import { Router } from "express";
 import {
   changePass,
   emailVerification,
+  enableTwoFactor,
   forgotPassword,
   getMe,
   logInUser,
   logOut,
   registerUser,
   resetPassword,
+  twoFactorOtpSend,
+  twoStepLogin,
 } from "../controllers/auth.controllers.js";
 import {
   changePassword,
@@ -24,6 +27,9 @@ const authRoute = Router();
 authRoute.route("/register").post(userRegister(), validate, registerUser);
 authRoute.route("/verify/:token").get(emailVerification);
 authRoute.route("/login").post(userLogIn(), validate, logInUser);
+authRoute.route("/twoStepLogin").post(jwt_token, twoStepLogin);
+authRoute.route("/twofactor").get(jwt_token, enableTwoFactor);
+authRoute.route("/twofactorotpsend").post(jwt_token, twoFactorOtpSend);
 authRoute.route("/getMe").get(jwt_token, getMe);
 authRoute.route("/logout").post(jwt_token, logOut);
 authRoute

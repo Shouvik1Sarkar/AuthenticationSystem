@@ -66,6 +66,16 @@ const userSchema = new mongoose.Schema(
     forgotPassordExpiry: {
       type: Date,
     },
+    twoFactorSecret: {
+      type: String,
+    },
+    twoFactorSecretOtpExpiry: {
+      type: Date,
+    },
+    twoFactorVerification: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

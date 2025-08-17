@@ -76,6 +76,28 @@ const forgotPasswordEmail = (name, senderUrl) => {
     },
   };
 };
+const twoFactorEmail = (name, twoFacOTP) => {
+  return {
+    body: {
+      name: name,
+      intro: "Welcome to the authentication System",
+      // action: {
+      //   instructions: "This is 2factor token",
+      //   // button: {
+      //   //   color: "#22BC66", // Optional action button color
+      //   //   text: "Reset Password",
+      //   //   link: twoFacOTP,
+      //   // },
+      // },
+      dictionary: {
+        text: "Reset Password",
+        link: twoFacOTP,
+      },
+      outro:
+        "Need help, or have questions? Just reply to this email, we'd love to help.",
+    },
+  };
+};
 
 export default mailSender;
-export { registrationEmail, forgotPasswordEmail };
+export { registrationEmail, forgotPasswordEmail, twoFactorEmail };

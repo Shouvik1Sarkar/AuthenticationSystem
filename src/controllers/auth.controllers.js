@@ -2,8 +2,17 @@ import asyncHandler from "../utils/asyncHandler.utils.js";
 import { ApiError } from "../utils/api-error-handler.utils.js";
 import { ApiResponse } from "../utils/api-response.utils.js";
 import { User } from "../models/user.models.js";
-import mailSender, { forgotPasswordEmail } from "../utils/mail.utils.js";
+import mailSender, {
+  forgotPasswordEmail,
+  twoFactorEmail,
+} from "../utils/mail.utils.js";
 import { registrationEmail } from "../utils/mail.utils.js";
+import speakeasy from "speakeasy";
+import {
+  generateSecrets,
+  generateToken,
+  verifyTwoFactor,
+} from "../utils/twoFactor.utils.js";
 // import { jwt_token } from "../middlewares/tokenValidation.middlewares.js";
 
 import jwt from "jsonwebtoken";
@@ -106,6 +115,26 @@ const logInUser = asyncHandler(async (req, res) => {
   };
   res.cookie("accessToken", access_token, cookieData);
 
+  if (user.twoFactorVerification) {
+    const token = generateToken(user.twoFactorSecret);
+    console.log("TOKEN: ", token);
+    console.log(" TWO FACTOR SECRET TOKEN: ", user.twoFactorSecret);
+    mailSender({
+      email,
+      subject: "Twofactor secret token",
+      mailGenContent: twoFactorEmail(user.userName, token),
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          "successfully generated and sent login token token"
+        )
+      );
+  }
+
   user.isLoggedIn = true;
   await user.save();
 
@@ -118,6 +147,103 @@ const logInUser = asyncHandler(async (req, res) => {
   // console.log("decoded", decoded);
 
   return res.status(200).json(new ApiResponse(200, "LogIn Successful"));
+});
+
+const twoStepLogin = asyncHandler(async (req, res) => {
+  const jwt_token_data = req.access_token_data;
+  console.log("ttttt: ", jwt_token_data);
+  const user = await User.findById({ _id: jwt_token_data.id });
+  if (!user) {
+    throw new ApiError(500, "Jwt data not found");
+  }
+
+  const secret = user.twoFactorSecret;
+
+  const { otp } = req.body;
+
+  console.log("TOKEN: ", otp);
+  console.log(" TWO FACTOR SECRET TOKEN: ", user.twoFactorSecret);
+
+  const tokenValidates = verifyTwoFactor(secret, otp);
+  console.log("pppppp", tokenValidates);
+  if (!tokenValidates) {
+    throw new ApiError(500, "OTP did not match");
+  }
+  user.isLoggedIn = true;
+  await user.save();
+  return res.status(200).json(new ApiResponse(200, "LogIn Successful"));
+});
+const enableTwoFactor = asyncHandler(async (req, res) => {
+  const jwt_token_data = req.access_token_data;
+  console.log("ttttt: ", jwt_token_data);
+  const user = await User.findById({ _id: jwt_token_data.id });
+  if (!user) {
+    throw new ApiError(500, "Jwt data not found");
+  }
+  if (!user.isLoggedIn) {
+    throw new ApiError(500, "not logged in");
+  }
+
+  // const secret = speakeasy.generateSecret({ length: 20 });
+  // const token = speakeasy.totp({
+  //   secret: secret.base32,
+  //   encoding: "base32",
+  //   step: 120,
+  // });
+  const secret = generateSecrets();
+  const twoSteptoken = generateToken(secret);
+  console.log("TwoStep token1: ", twoSteptoken);
+  console.log("secret: ", secret.base32);
+  console.log("secret HASHED: ", twoSteptoken);
+  const email = user.email;
+  mailSender({
+    email,
+    subject: "Twofactor secret token",
+    mailGenContent: twoFactorEmail(user.userName, twoSteptoken),
+  });
+
+  user.twoFactorSecret = secret.base32;
+  // user.twoFactorSecretOtpExpiry = Date.now() + 10 * 60 * 1000;
+  await user.save();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "successfully generated token"));
+});
+
+const twoFactorOtpSend = asyncHandler(async (req, res) => {
+  const jwt_token_data = req.access_token_data;
+  console.log("ttttt: ", jwt_token_data);
+  const user = await User.findById({ _id: jwt_token_data.id });
+  if (!user) {
+    throw new ApiError(500, "Jwt data not found");
+  }
+
+  // if (Date.now() >= user.twoFactorSecretOtpExpiry) {
+  //   throw new ApiError(500, "otp expired");
+  // }
+
+  const secret = user.twoFactorSecret;
+
+  const { otp } = req.body;
+  // const tokenValidates = speakeasy.totp.verify({
+  //   secret: secret,
+  //   encoding: "base32",
+  //   token: otp,
+  //   step: 120,
+  //   window: 1, // adds extra 2 mins
+  // });
+
+  const tokenValidates = verifyTwoFactor(secret, otp);
+  console.log("pppppp", tokenValidates);
+  if (!tokenValidates) {
+    throw new ApiError(500, "OTP did not match");
+  }
+
+  user.twoFactorVerification = true;
+  await user.save();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "successfully enabled two factor token"));
 });
 
 const getMe = asyncHandler(async (req, res) => {
@@ -265,4 +391,7 @@ export {
   forgotPassword,
   changePass,
   resetPassword,
+  enableTwoFactor,
+  twoFactorOtpSend,
+  twoStepLogin,
 };
