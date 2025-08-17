@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   changePass,
+  disableTwoFactor,
   emailVerification,
   enableTwoFactor,
   forgotPassword,
@@ -30,6 +31,7 @@ authRoute.route("/login").post(userLogIn(), validate, logInUser);
 authRoute.route("/twoStepLogin").post(jwt_token, twoStepLogin);
 authRoute.route("/twofactor").get(jwt_token, enableTwoFactor);
 authRoute.route("/twofactorotpsend").post(jwt_token, twoFactorOtpSend);
+authRoute.route("/disableTwoFactor").post(jwt_token, disableTwoFactor);
 authRoute.route("/getMe").get(jwt_token, getMe);
 authRoute.route("/logout").post(jwt_token, logOut);
 authRoute

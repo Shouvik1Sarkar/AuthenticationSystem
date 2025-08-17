@@ -246,6 +246,26 @@ const twoFactorOtpSend = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "successfully enabled two factor token"));
 });
 
+const disableTwoFactor = asyncHandler(async (req, res) => {
+  const jwt_token_data = req.access_token_data;
+  console.log("ttttt: ", jwt_token_data);
+  const user = await User.findById({ _id: jwt_token_data.id });
+  if (!user) {
+    throw new ApiError(500, "Jwt data not found");
+  }
+  if (user.twoFactorVerification) {
+    user.twoFactorVerification = false;
+    await user.save();
+    return res.status(409).json(new ApiResponse(409, "successfully disabled"));
+  }
+
+  return res
+    .status(409)
+    .json(
+      new ApiResponse(409, "Two-factor authentication is already disabled")
+    );
+});
+
 const getMe = asyncHandler(async (req, res) => {
   const jwt_data = req.access_token_data;
   console.log("jwt_data: ", jwt_data);
@@ -394,4 +414,5 @@ export {
   enableTwoFactor,
   twoFactorOtpSend,
   twoStepLogin,
+  disableTwoFactor,
 };
